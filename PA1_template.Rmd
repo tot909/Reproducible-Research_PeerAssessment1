@@ -1,8 +1,109 @@
+--
+title: "Reproducible Research Peer Assessment 1"
+author: "Usha"
+date: "2024-06-09"
+output: html_document
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+
+# Loading and preprocessing the data
+```{r load-data, echo=TRUE}
+library(ggplot2)
+library(dplyr)
+
+# Load the data
+data <- read.csv("activity.csv")
+
+# Convert the date column to Date class
+data$date <- as.Date(data$date, format="%Y-%m-%d")
+
+## What is mean total number of steps taken per day?
+```{r total-steps-per-day, echo=TRUE}
+total_steps_per_day <- data %>%
+    filter(!is.na(steps)) %>%
+    group_by(date) %>%
+    summarise(total_steps = sum(steps))
+```{r histogram-steps-per-day, echo=TRUE, fig.height=5, fig.width=7}
+ggplot(total_steps_per_day, aes(x=total_steps)) +
+    geom_histogram(binwidth=1000, fill="blue", color="black") +
+    xlab("Total Steps per Day") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Total Steps per Day")
+```{r histogram-steps-per-day, echo=TRUE, fig.height=5, fig.width=7}
+ggplot(total_steps_per_day, aes(x=total_steps)) +
+    geom_histogram(binwidth=1000, fill="blue", color="black") +
+    xlab("Total Steps per Day") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Total Steps per Day")
+```{r mean-median-steps-per-day, echo=TRUE}
+mean_steps <- mean(total_steps_per_day$total_steps)
+median_steps <- median(total_steps_per_day$total_steps)
+
+mean_steps
+median_steps
+
+## What is the average daily activity pattern?
+```{r average-steps-interval, echo=TRUE}
+average_steps_interval <- data %>%
+    filter(!is.na(steps)) %>%
+    group_by(interval) %>%
+    summarise(average_steps = mean(steps))
+```{r time-series-plot, echo=TRUE, fig.height=5, fig.width=7}
+ggplot(average_steps_interval, aes(x=interval, y=average_steps)) +
+    geom_line() +
+    xlab("5-minute Interval") +
+    ylab("Average Steps") +
+    ggtitle("Average Daily Activity Pattern")
+```{r max-interval, echo=TRUE}
+max_interval <- average_steps_interval[which.max(average_steps_interval$average_steps),]
+max_interval
+## Imputing missing values
+```{r total-na, echo=TRUE}
+total_na <- sum(is.na(data$steps))
+total_na
+```{r fill-na, echo=TRUE}
+data_filled <- data
+for (i in 1:nrow(data_filled)) {
+    if (is.na(data_filled$steps[i])) {
+        data_filled$steps[i] <- average_steps_interval$average_steps[which(average_steps_interval$interval == data_filled$interval[i])]
+    }
+}
+```{r total-steps-per-day-filled, echo=TRUE, fig.height=5, fig.width=7}
+total_steps_per_day_filled <- data_filled %>%
+    group_by(date) %>%
+    summarise(total_steps = sum(steps))
+
+ggplot(total_steps_per_day_filled, aes(x=total_steps)) +
+    geom_histogram(binwidth=1000, fill="blue", color="black") +
+    xlab("Total Steps per Day") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Total Steps per Day (Filled Data)")
+```{r mean-median-steps-per-day-filled, echo=TRUE}
+mean_steps_filled <- mean(total_steps_per_day_filled$total_steps)
+median_steps_filled <- median(total_steps_per_day_filled$total_steps)
+
+mean_steps_filled
+median_steps_filled
+## Are there differences in activity patterns between weekdays and weekends?
+```{r weekday-weekend, echo=TRUE}
+data_filled$day_type <- ifelse(weekdays(data_filled$date) %in% c("Saturday", "Sunday"), "weekend", "weekday")
+data_filled$day_type <- as.factor(data_filled$day_type)
+```{r average-steps-day-type, echo=TRUE}
+average_steps_day_type <- data_filled %>%
+    group_by(interval, day_type) %>%
+    summarise(average_steps = mean(steps))
+```{r panel-plot, echo=TRUE, fig.height=7, fig.width=7}
+ggplot(average_steps_day_type, aes(x=interval, y=average_steps, color=day_type)) +
+    geom_line() +
+    facet_wrap(~day_type, ncol=1) +
+    xlab("5-minute Interval") +
+    ylab("Average Steps") +
+    ggtitle("Average Daily Activity Pattern by Day Type")
+
+## Conclusion
+
+This concludes the creation of the R Markdown file.
+---
+
 ---
 
 
